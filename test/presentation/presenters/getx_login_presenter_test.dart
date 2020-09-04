@@ -25,7 +25,7 @@ void main() {
   String token;
 
   PostExpectation mockValidationCall(String field) =>
-    when(validation.validate(field: field == null ? anyNamed('field') : field, value: anyNamed('value')));
+    when(validation.validate(field: field == null ? anyNamed('field') : field, input: anyNamed('input')));
 
   void mockValidation({String field, ValidationError value}) {
     mockValidationCall(field).thenReturn(value);
@@ -34,7 +34,7 @@ void main() {
   PostExpectation mockAuthenticationCall() => when(authentication.auth(any));
 
   void mockAuthentication() {
-    mockAuthenticationCall().thenAnswer((_) async => AccountEntity(token));
+    mockAuthenticationCall().thenAnswer((_) async => AccountEntity(token: token));
   }
 
   void mockAuthenticationError(DomainError error) {
@@ -64,9 +64,11 @@ void main() {
   });
 
   test('Should call Validation with correct email', () {
+    final formData = {'email': email, 'password': null};
+
     sut.validateEmail(email);
 
-    verify(validation.validate(field: 'email', value: email)).called(1);
+    verify(validation.validate(field: 'email', input: formData)).called(1);
   });
 
   test('Should emit invalidFieldError if email is invalid', () {
@@ -98,9 +100,11 @@ void main() {
   });
 
   test('Should call Validation with correct password', () {
+    final formData = {'email': null, 'password': password};
+
     sut.validatePassword(password);
 
-    verify(validation.validate(field: 'password', value: password)).called(1);
+    verify(validation.validate(field: 'password', input: formData)).called(1);
   });
 
   test('Should emit requiredFieldError if password is empty', () {
@@ -153,7 +157,7 @@ void main() {
 
     await sut.auth();
 
-    verify(saveCurrentAccount.save(AccountEntity(token))).called(1);
+    verify(saveCurrentAccount.save(AccountEntity(token: token))).called(1);
   });
 
   test('Should emit UnexpectedError if SaveCurrentAccount fails', () async {
@@ -205,5 +209,11 @@ void main() {
     sut.mainErrorStream.listen(expectAsync1((error) => expect(error, UIError.unexpected)));
 
     await sut.auth();
+  });
+
+  test('Should go to SignUpPage on link click', () async {
+    sut.navigateToStream.listen(expectAsync1((page) => expect(page, '/signup')));
+
+    sut.goToSignUp();
   });
 }
